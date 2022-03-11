@@ -9,22 +9,35 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
+const (
+	PublishDelay         = 3 * time.Second
+	ConnectTimeout       = 5 * time.Second
+	ConnectRetryInterval = 3 * time.Second
+	MaxReconnectInterval = 9 * time.Second
+)
 
 type Config struct {
 	ClientID string `koanf:"client_id"`
 	URL      string `koanf:"url"`
 }
 
+// nolint: ireturn
 func Connect(cfg Config) mqtt.Client {
+	opts := mqtt.NewClientOptions().
+		AddBroker(cfg.URL).
+		SetClientID(cfg.ClientID).
+		SetAutoReconnect(true).
+		SetConnectRetry(true).
+		SetConnectTimeout(ConnectTimeout).
+		SetConnectRetryInterval(ConnectRetryInterval).
+		SetMaxReconnectInterval(MaxReconnectInterval)
 
-	opts := mqtt.NewClientOptions().AddBroker(cfg.URL).SetClientID(cfg.ClientID).SetAutoReconnect(true).
-		SetConnectRetry(true).SetConnectTimeout(5 * time.Second).SetConnectRetryInterval(3 * time.Second).SetMaxReconnectInterval(9 * time.Second)
-
-	//opts.SetKeepAlive(60 * time.Second)   //nolint:gomnd
-	//opts.SetPingTimeout(10 * time.Second) //nolint:gomnd
+	// opts.SetKeepAlive(60 * time.Second)   //nolint:gomnd
+	// opts.SetPingTimeout(10 * time.Second) //nolint:gomnd
 
 	opts.SetConnectionAttemptHandler(func(broker *url.URL, tlsCfg *tls.Config) *tls.Config {
 		log.Printf("ConnectionAttemptHandler: broker: %s\n", broker)
+
 		return tlsCfg
 	})
 
@@ -44,7 +57,6 @@ func Connect(cfg Config) mqtt.Client {
 		log.Printf("OnConnectHandler\n")
 	})
 
-
 	c := mqtt.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
@@ -54,7 +66,6 @@ func Connect(cfg Config) mqtt.Client {
 }
 
 func main() {
-
 	cfg := Config{
 		ClientID: "test-client",
 		URL:      "tcp://localhost:1883",
@@ -62,7 +73,7 @@ func main() {
 
 	client := Connect(cfg)
 
-	println(client.IsConnected())
+	log.Println(client.IsConnected())
 
 	for {
 		if token := client.Publish("test", 0, false, "test"); token.Wait() && token.Error() != nil {
@@ -70,7 +81,7 @@ func main() {
 		} else {
 			log.Println("successful publish")
 		}
-		time.Sleep(3 * time.Second)
-	}
 
+		time.Sleep(PublishDelay)
+	}
 }
