@@ -76,10 +76,18 @@ func main() {
 	log.Println(client.IsConnected())
 
 	for {
-		if token := client.Publish("test", 0, false, "test"); token.Wait() && token.Error() != nil {
-			log.Println(token.Error())
+		if !client.IsConnectionOpen() {
+			log.Println("client is not connected, wait for connection")
 		} else {
-			log.Println("successful publish")
+			token := client.Publish("test", 0, false, "test")
+
+			<-token.Done()
+
+			if token.Error() != nil {
+				log.Println(token.Error())
+			} else {
+				log.Println("successful publish")
+			}
 		}
 
 		time.Sleep(PublishDelay)
