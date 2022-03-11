@@ -1,0 +1,36 @@
+---
+stages:
+  - lint
+  - compile
+
+lint:
+  image: registry.snapp.tech/docker/golang:1.17-alpine3.14
+  stage: lint
+  variables:
+    GOPROXY: 'https://repo.snapp.tech/repository/goproxy'
+    GOOS: 'linux'
+    GOARCH: 'amd64'
+  script:
+    - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+    - golangci-lint run --enable-all --timeout 10m
+
+compile:
+  image: registry.snapp.tech/docker/golang:1.17-alpine
+  stage: compile
+  variables:
+    GOOS: "linux"
+    GOARCH: "amd64"
+    GOPROXY: 'https://repo.snapp.tech/repository/goproxy'
+    CGO_ENABLED: 0
+  before_script:
+    - go mod vendor -v
+  script:
+    - go build -mod vendor -v  ./...
+  cache:
+    paths:
+      - vendor/
+  artifacts:
+    name: "$CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG"
+    paths:
+      - ${BUILD_PATH}/${CI_PROJECT_NAME}
+    expire_in: 1 week
