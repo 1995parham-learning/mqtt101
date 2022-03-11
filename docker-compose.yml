@@ -1,0 +1,6 @@
+---
+services:
+  emqx:
+    image: emqx/emqx:latest
+    ports:
+      - 1883:1883
