@@ -1,3 +1,3 @@
-# emqx-reconnection
+## Introduction
 
-How emqx behave on server issues
+How emqx behave on server issues and reconnect.
