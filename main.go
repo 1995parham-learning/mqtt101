@@ -45,10 +45,6 @@ func Connect(cfg Config) mqtt.Client {
 		log.Printf("ConnectionLostHandler: err: %s\n", err)
 	})
 
-	opts.SetConnectionLostHandler(func(client mqtt.Client, err error) {
-		log.Printf("ConnectionLostHandler: err: %s\n", err)
-	})
-
 	opts.SetReconnectingHandler(func(client mqtt.Client, options *mqtt.ClientOptions) {
 		log.Printf("ReconnectingHandler\n")
 	})
