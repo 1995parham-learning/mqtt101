@@ -1,6 +1,7 @@
 ---
 services:
   emqx:
-    image: emqx/emqx:latest
+    image: emqx/emqx:5.0.8
     ports:
       - 1883:1883
+      - 18083:18083
