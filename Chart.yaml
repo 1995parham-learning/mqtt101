@@ -1,0 +1,10 @@
+---
+apiVersion: v2
+name: emqx
+description: emqx chart's values
+type: application
+version: 0.0.0
+dependencies:
+  - name: emqx
+    version: 5.0.19
+    repository: https://repos.emqx.io/charts
