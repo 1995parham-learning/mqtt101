@@ -17,7 +17,7 @@ func onMessage(_ mqtt.Client, msg mqtt.Message) {
 
 func main() {
 	opts := mqtt.NewClientOptions().
-		AddBroker("127.0.0.1").
+		AddBroker("mqtt://127.0.0.1:1883").
 		SetClientID("mqtt101-consumer-client")
 
 	opts.SetOnConnectHandler(func(client mqtt.Client) {
