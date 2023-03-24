@@ -1,4 +1,5 @@
----
+version: '3.9'
+
 services:
   emqx:
     image: emqx/emqx:5.0.8
