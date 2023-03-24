@@ -1,73 +1,42 @@
-package client
+package main
 
 import (
-	"errors"
-	"fmt"
 	"log"
-	"os"
-	"sync"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-type Client struct {
-	c         mqtt.Client
-	opts      *mqtt.ClientOptions
-	topics    []string
-	mutex     sync.Mutex
-	connected bool
+const (
+	CheckDelay = time.Second
+)
+
+func onMessage(_ mqtt.Client, msg mqtt.Message) {
+	log.Printf("New message on %s: %s", msg.Topic(), string(msg.Payload()))
 }
 
-func New(server string, id string) Client {
-	f := func(client mqtt.Client, msg mqtt.Message) {
-		log.Printf("CLIENT ID: %s\n", id)
-		log.Printf("TOPIC: %s\n", msg.Topic())
-		log.Printf("MSG: %s\n", msg.Payload())
-	}
+func main() {
+	opts := mqtt.NewClientOptions().
+		AddBroker("127.0.0.1").
+		SetClientID("mqtt101-consumer-client")
 
-	return NewWithMessageHandler(server, id, f)
-}
-
-func NewWithMessageHandler(server string, id string, f mqtt.MessageHandler) Client {
-	opts := mqtt.NewClientOptions().AddBroker(server)
-	opts.SetClientID(id)
-	opts.SetDefaultPublishHandler(f)
-
-	cli := Client{
-		opts:      opts,
-		connected: false,
-	}
-
-	return cli
-}
-
-func (cli *Client) Connect() {
-	cli.connected = true
-
-	cli.opts.SetOnConnectHandler(func(client MQTT.Client) {
-		for _, topic := range cli.topics {
-			if token := client.Subscribe(topic, 0, nil); token.Wait() && token.Error() != nil {
-				fmt.Println(token.Error())
-				os.Exit(1)
-			}
+	opts.SetOnConnectHandler(func(client mqtt.Client) {
+		if token := client.Subscribe("test", 0, onMessage); token.Wait() && token.Error() != nil {
+			log.Printf("subscribing failed %s\n", token.Error())
 		}
 	})
 
-	cli.c = MQTT.NewClient(cli.opts)
+	client := mqtt.NewClient(opts)
 
-	if token := cli.c.Connect(); token.Wait() && token.Error() != nil {
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
-}
 
-func (cli *Client) Register(topics []string) error {
-	if cli.connected {
-		return errors.New("you can not register a new topic after connecting the client to the broker")
+	for {
+		if !client.IsConnectionOpen() {
+			log.Println("client is not connected, wait for connection")
+		} else {
+			time.Sleep(CheckDelay)
+		}
 	}
-
-	cli.mutex.Lock()
-	cli.topics = append(cli.topics, topics...)
-	cli.mutex.Unlock()
-
-	return nil
 }
