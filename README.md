@@ -1,3 +1,3 @@
-# EMQX v5 Chart
+# emqx-reconnection
 
-EMQX v5 how we are going to deploy it?
+How emqx behave on server issues
