@@ -39,3 +39,9 @@ Now, we want to deploy it on cloud, and we want to use its [official chart](http
 On the production, you must pay attention to security and performance.
 For security, you can choose between different methods of authentication and authorization, which are provided by EMQ.
 The most flexible option is using HTTP authentication because you can write whatever you want on your HTTP server.
+
+```
+helm repo add emqx https://repos.emqx.io/charts
+helm dependency build
+helm install emqx . -f values.yaml
+```
