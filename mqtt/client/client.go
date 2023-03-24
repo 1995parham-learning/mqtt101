@@ -3,32 +3,33 @@ package client
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"sync"
 
-	MQTT "github.com/eclipse/paho.mqtt.golang"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 type Client struct {
-	c         MQTT.Client
-	opts      *MQTT.ClientOptions
+	c         mqtt.Client
+	opts      *mqtt.ClientOptions
 	topics    []string
 	mutex     sync.Mutex
 	connected bool
 }
 
 func New(server string, id string) Client {
-	f := func(client MQTT.Client, msg MQTT.Message) {
-		fmt.Printf("CLIENT ID: %s\n", id)
-		fmt.Printf("TOPIC: %s\n", msg.Topic())
-		fmt.Printf("MSG: %s\n", msg.Payload())
+	f := func(client mqtt.Client, msg mqtt.Message) {
+		log.Printf("CLIENT ID: %s\n", id)
+		log.Printf("TOPIC: %s\n", msg.Topic())
+		log.Printf("MSG: %s\n", msg.Payload())
 	}
 
 	return NewWithMessageHandler(server, id, f)
 }
 
-func NewWithMessageHandler(server string, id string, f MQTT.MessageHandler) Client {
-	opts := MQTT.NewClientOptions().AddBroker(server)
+func NewWithMessageHandler(server string, id string, f mqtt.MessageHandler) Client {
+	opts := mqtt.NewClientOptions().AddBroker(server)
 	opts.SetClientID(id)
 	opts.SetDefaultPublishHandler(f)
 
@@ -57,11 +58,6 @@ func (cli *Client) Connect() {
 	if token := cli.c.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
-}
-
-func (cli *Client) Publish(topic string, text string) {
-	token := cli.c.Publish(topic, 0, false, text)
-	token.Wait()
 }
 
 func (cli *Client) Register(topics []string) error {
