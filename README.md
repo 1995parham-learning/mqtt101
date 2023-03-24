@@ -27,3 +27,15 @@ if c.options.OnConnect != nil {
 
 This implementation works great, and you must not forget to re-subscribe on connection lost
 To this just do subscribe with on-connect.
+
+## Deployment
+
+As you may guess, the hardest problem after writing the first MQTT application is deploying the Broker.
+I've chosen EMQ here because of its performance.
+At [AoLab](https://github.com/AoLab) Iman and I deployed it with default configuration on a small (4G, 4 cores) virtual machine,
+and it handled 1000 concurrent connections without any issue.
+
+Now, we want to deploy it on cloud, and we want to use its [official chart](https://github.com/emqx/emqx/tree/master/deploy/charts).
+On the production, you must pay attention to security and performance.
+For security, you can choose between different methods of authentication and authorization, which are provided by EMQ.
+The most flexible option is using HTTP authentication because you can write whatever you want on your HTTP server.
