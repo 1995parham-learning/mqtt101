@@ -21,6 +21,10 @@ type Config struct {
 	URL      string `koanf:"url"`
 }
 
+func onPublishHandler(_ mqtt.Client, message mqtt.Message) {
+	log.Printf("New message published on %s\n", message.Topic())
+}
+
 // nolint: ireturn
 func Connect(cfg Config) mqtt.Client {
 	opts := mqtt.NewClientOptions().
@@ -30,7 +34,8 @@ func Connect(cfg Config) mqtt.Client {
 		SetConnectRetry(true).
 		SetConnectTimeout(ConnectTimeout).
 		SetConnectRetryInterval(ConnectRetryInterval).
-		SetMaxReconnectInterval(MaxReconnectInterval)
+		SetMaxReconnectInterval(MaxReconnectInterval).
+		SetDefaultPublishHandler(onPublishHandler)
 
 	// opts.SetKeepAlive(60 * time.Second)   //nolint:gomnd
 	// opts.SetPingTimeout(10 * time.Second) //nolint:gomnd
@@ -63,7 +68,7 @@ func Connect(cfg Config) mqtt.Client {
 
 func main() {
 	cfg := Config{
-		ClientID: "test-client",
+		ClientID: "mqtt101-producer-client",
 		URL:      "tcp://localhost:1883",
 	}
 
