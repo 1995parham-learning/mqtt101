@@ -13,6 +13,8 @@ emqx:
     EMQX_CLUSTER__K8S__SUFFIX: svc.cluster.local
     EMQX_DASHBOARD__DEFAULT_PASSWORD: public
     EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+    EMQX_LISTENERS__TCP__DEFAULT__AUTHENTICATION__MECHANISM: "password_based"
+    EMQX_LISTENERS__TCP__INTERNAL__BIND: 11883
   emqxLicenseSecretName: null
   image:
     pullPolicy: IfNotPresent
@@ -22,7 +24,7 @@ emqx:
       annotations: {}
       enabled: false
       hosts:
-      - dashboard.emqx.local
+        - dashboard.emqx.local
       path: /
       pathType: ImplementationSpecific
       tls: []
