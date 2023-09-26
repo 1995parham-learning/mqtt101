@@ -22,6 +22,7 @@ emqx:
     EMQX_LISTENERS__TCP__DEFAULT__AUTHENTICATION__1__BODY__PASSWORD: "${password}"
     EMQX_LISTENERS__TCP__DEFAULT__AUTHENTICATION__1__BODY__TOKEN: "${username}"
     EMQX_LISTENERS__TCP__INTERNAL__BIND: 11883
+    EMQX_LISTENERS__TCP__INTERNAL__ENABLE_AUTHN: false
   emqxLicenseSecretName: null
   image:
     pullPolicy: IfNotPresent
