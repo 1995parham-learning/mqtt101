@@ -1,6 +1,6 @@
 <h1 align="center">MQTT 101</h1>
 <p align="center">
-  <img src=".github/assests/banner.png"><br>
+  <img src=".github/assets/banner.png"><br>
 </p>
 
 ## Introduction
