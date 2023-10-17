@@ -1,0 +1,22 @@
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: emqx-ws
+  labels:
+    app.kubernetes.io/instance: emqx
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: emqx
+    router: private
+spec:
+  host: emq-{{ .Release.Namespace }}-wss.apps.private.okd4.teh-1.snappcloud.io
+  port:
+    targetPort: ws
+  tls:
+    insecureEdgeTerminationPolicy: None
+    termination: edge
+  to:
+    kind: Service
+    name: emqx
+    weight: 100
+  wildcardPolicy: None
