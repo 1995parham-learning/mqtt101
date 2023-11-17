@@ -66,11 +66,11 @@ emqx:
   resources:
     limits:
       cpu: 256m
-      memory: 800Mi
+      memory: 500Mi
       ephemeral-storage: 1Gi
     requests:
-      cpu: 512m
-      memory: 900Mi
+      cpu: 256m
+      memory: 500Mi
       ephemeral-storage: 1Gi
 
   service:
