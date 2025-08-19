@@ -21,7 +21,6 @@ type Config struct {
 	URL      string `koanf:"url"`
 }
 
-// nolint: ireturn
 func Connect(cfg Config) mqtt.Client {
 	opts := mqtt.NewClientOptions().
 		AddBroker(cfg.URL).
@@ -64,7 +63,7 @@ func Connect(cfg Config) mqtt.Client {
 func main() {
 	cfg := Config{
 		ClientID: "mqtt101-producer-client",
-		URL:      "tcp://localhost:1883",
+		URL:      "mqtt://127.0.0.1:1883",
 	}
 
 	client := Connect(cfg)

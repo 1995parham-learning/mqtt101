@@ -29,16 +29,22 @@ dev cmd *flags:
       docker compose {{ cmd }} {{ flags }}
     fi
 
-run: (dev "up") run-producer run-consumer
+run: (dev "up")
+    #!/usr/bin/env bash
+    set -eu
+    set -o pipefail
 
-[private]
-[working-directory("producer")]
-run-producer:
-    @echo "{{ GREEN }} run producer {{ NORMAL }}"
-    @go run main.go
+    cleanup() {
+      echo "{{ BOLD + RED }}Shutting down producer...{{ NORMAL }}"
+      kill $PRODUCER_PID
+      wait
+    }
 
-[private]
-[working-directory("consumer")]
-run-consumer:
-    @echo "{{ GREEN }} run consumer {{ NORMAL }}"
-    @go run main.go
+    trap cleanup INT
+
+    echo "{{ GREEN }} run producer {{ NORMAL }}"
+    go run ./producer &
+    PRODUCER_PID=$!
+
+    echo "{{ GREEN }} run consumer {{ NORMAL }}"
+    go run ./consumer
