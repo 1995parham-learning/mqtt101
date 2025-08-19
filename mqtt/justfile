@@ -12,3 +12,17 @@ update-producer:
 update-consumer:
     @echo "{{ GREEN }} update consumer packages {{ NORMAL }}"
     @go get -u
+
+# set up the dev environment with docker-compose
+dev cmd *flags:
+    #!/usr/bin/env bash
+    echo '{{ BOLD + YELLOW }}Development environment based on docker-compose{{ NORMAL }}'
+    set -eu
+    set -o pipefail
+    if [ {{ cmd }} = 'down' ]; then
+      docker compose down --volumes --remove-orphans
+    elif [ {{ cmd }} = 'up' ]; then
+      docker compose up --wait -d {{ flags }}
+    else
+      docker compose {{ cmd }} {{ flags }}
+    fi
