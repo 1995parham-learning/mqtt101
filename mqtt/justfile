@@ -3,11 +3,13 @@ default:
 
 update: update-producer update-consumer
 
+[private]
 [working-directory("producer")]
 update-producer:
     @echo "{{ GREEN }} update producer packages {{ NORMAL }}"
     @go get -u
 
+[private]
 [working-directory("consumer")]
 update-consumer:
     @echo "{{ GREEN }} update consumer packages {{ NORMAL }}"
@@ -26,3 +28,17 @@ dev cmd *flags:
     else
       docker compose {{ cmd }} {{ flags }}
     fi
+
+run: (dev "up") run-producer run-consumer
+
+[private]
+[working-directory("producer")]
+run-producer:
+    @echo "{{ GREEN }} run producer {{ NORMAL }}"
+    @go run main.go
+
+[private]
+[working-directory("consumer")]
+run-consumer:
+    @echo "{{ GREEN }} run consumer {{ NORMAL }}"
+    @go run main.go
