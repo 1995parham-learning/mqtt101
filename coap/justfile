@@ -1,0 +1,14 @@
+default:
+    @just --list
+
+update: update-server update-client
+
+[working-directory("server")]
+update-server:
+    @echo "{{ GREEN }} update server packages {{ NORMAL }}"
+    @go get -u
+
+[working-directory("client")]
+update-client:
+    @echo "{{ GREEN }} update client packages {{ NORMAL }}"
+    @go get -u
