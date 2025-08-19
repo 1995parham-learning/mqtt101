@@ -1,0 +1,14 @@
+default:
+    @just --list
+
+update: update-producer update-consumer
+
+[working-directory("producer")]
+update-producer:
+    @echo "{{ GREEN }} update producer packages {{ NORMAL }}"
+    @go get -u
+
+[working-directory("consumer")]
+update-consumer:
+    @echo "{{ GREEN }} update consumer packages {{ NORMAL }}"
+    @go get -u
