@@ -2,12 +2,16 @@
 package main
 
 import (
-	"crypto/tls"
+	"context"
 	"log/slog"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/eclipse/paho.golang/autopaho"
+	"github.com/eclipse/paho.golang/paho"
 )
 
 const (
@@ -22,72 +26,74 @@ type Config struct {
 	URL      string `koanf:"url"`
 }
 
-func Connect(cfg Config, logger *slog.Logger) mqtt.Client {
-	opts := mqtt.NewClientOptions().
-		AddBroker(cfg.URL).
-		SetClientID(cfg.ClientID).
-		SetAutoReconnect(true).
-		SetConnectRetry(true).
-		SetConnectTimeout(ConnectTimeout).
-		SetConnectRetryInterval(ConnectRetryInterval).
-		SetMaxReconnectInterval(MaxReconnectInterval)
+// Connect into mqtt broker.
+// nolint: exhaustruct
+func Connect(cfg Config, logger *slog.Logger) *autopaho.ConnectionManager {
+	mqttURL, _ := url.Parse(cfg.URL)
 
-	// opts.SetKeepAlive(60 * time.Second)   //nolint:gomnd
-	// opts.SetPingTimeout(10 * time.Second) //nolint:optionsgomnd
-
-	opts.SetConnectionAttemptHandler(func(broker *url.URL, tlsCfg *tls.Config) *tls.Config {
-		logger.Info("ConnectionAttemptHandler", "broker", broker)
-
-		return tlsCfg
+	conn, err := autopaho.NewConnection(context.Background(), autopaho.ClientConfig{
+		ServerUrls: []*url.URL{mqttURL},
+		ClientConfig: paho.ClientConfig{
+			ClientID: cfg.ClientID,
+		},
 	})
+	if err != nil {
+		logger.Error("failed to create a new connection", "error", err)
 
-	opts.SetConnectionLostHandler(func(_ mqtt.Client, err error) {
-		logger.Info("ConnectionLostHandler", "error", err)
-	})
-
-	opts.SetReconnectingHandler(func(_ mqtt.Client, _ *mqtt.ClientOptions) {
-		logger.Info("ReconnectingHandler")
-	})
-
-	opts.SetOnConnectHandler(func(_ mqtt.Client) {
-		logger.Info("OnConnectHandler")
-	})
-
-	c := mqtt.NewClient(opts)
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		logger.Error("mqtt connection failed", "error", token.Error())
+		return nil
 	}
 
-	return c
+	logger.Info("wait for the new connection 🚧")
+
+	if err := conn.AwaitConnection(context.Background()); err != nil {
+		logger.Error("failed to wait for a new connection", "error", err)
+
+		return nil
+	}
+
+	logger.Info("connection successful ✅")
+
+	return conn
 }
 
+// nolint: exhaustruct
 func main() {
-	logger := slog.Default()
+	logger := slog.Default().With("role", "producer")
 
 	cfg := Config{
 		ClientID: "mqtt101-producer-client",
 		URL:      "mqtt://127.0.0.1:1883",
 	}
 
-	client := Connect(cfg, logger.With("component", "client"))
+	conn := Connect(cfg, logger.With("component", "client"))
 
-	logger.Info("client connected", "is-connected", client.IsConnected())
-
-	for {
-		if !client.IsConnectionOpen() {
-			logger.Info("client is not connected, wait for connection")
-		} else {
-			token := client.Publish("test", 0, false, "test")
-
-			<-token.Done()
-
-			if token.Error() != nil {
-				logger.Error("", "error", token.Error())
-			} else {
-				logger.Info("successful publish")
+	go func() {
+		for {
+			_, err := conn.Publish(context.Background(), &paho.Publish{
+				QoS:     0,
+				Topic:   "test",
+				Payload: []byte("hello world"),
+			})
+			if err != nil {
+				slog.Error("failed to publish", "error", err)
 			}
-		}
 
-		time.Sleep(PublishDelay)
-	}
+			time.Sleep(PublishDelay)
+		}
+	}()
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT)
+	signal.Notify(sig, syscall.SIGTERM)
+
+	<-sig
+	logger.Info("signal caught - exiting")
+
+	// We could cancel the context at this point but will call Disconnect instead (this waits for autopaho to shutdown)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	_ = conn.Disconnect(ctx)
+
+	logger.Info("shutdown complete")
 }
