@@ -58,11 +58,15 @@ func main() {
 		return
 	}
 
+	logger.Info("wait for the new connection 🚧")
+
 	if err := conn.AwaitConnection(context.Background()); err != nil {
 		logger.Error("failed to wait for a new connection", "error", err)
 
 		return
 	}
+
+	logger.Info("connection successful ✅")
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT)
