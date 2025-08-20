@@ -21,14 +21,14 @@ const (
 func onMessage(pr paho.PublishReceived) (bool, error) {
 	msg := pr.Packet
 
-	slog.Default().Info("New message", "topic", msg.Topic, "payload", string(msg.Payload))
+	slog.Default().With("role", "consumer").Info("New message", "topic", msg.Topic, "payload", string(msg.Payload))
 
 	return true, nil
 }
 
 // nolint: exhaustruct
 func main() {
-	logger := slog.Default()
+	logger := slog.Default().With("role", "consumer")
 
 	mqttURL, _ := url.Parse("mqtt://127.0.0.1:1883")
 

@@ -36,15 +36,15 @@ run: (dev "up")
 
     cleanup() {
       echo "{{ BOLD + RED }}Shutting down producer...{{ NORMAL }}"
-      kill $PRODUCER_PID
+      kill $CONSUMER_PID
       wait
     }
 
     trap cleanup INT
 
-    echo "{{ GREEN }} run producer {{ NORMAL }}"
-    go run ./producer &
-    PRODUCER_PID=$!
-
     echo "{{ GREEN }} run consumer {{ NORMAL }}"
-    go run ./consumer
+    go run ./consumer &
+    CONSUMER_PID=$!
+
+    echo "{{ GREEN }} run producer {{ NORMAL }}"
+    go run ./producer
