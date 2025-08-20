@@ -1,8 +1,9 @@
+// produce messages to emqx using mqtt protocol.
 package main
 
 import (
 	"crypto/tls"
-	"log"
+	"log/slog"
 	"net/url"
 	"time"
 
@@ -21,7 +22,7 @@ type Config struct {
 	URL      string `koanf:"url"`
 }
 
-func Connect(cfg Config) mqtt.Client {
+func Connect(cfg Config, logger *slog.Logger) mqtt.Client {
 	opts := mqtt.NewClientOptions().
 		AddBroker(cfg.URL).
 		SetClientID(cfg.ClientID).
@@ -32,56 +33,58 @@ func Connect(cfg Config) mqtt.Client {
 		SetMaxReconnectInterval(MaxReconnectInterval)
 
 	// opts.SetKeepAlive(60 * time.Second)   //nolint:gomnd
-	// opts.SetPingTimeout(10 * time.Second) //nolint:gomnd
+	// opts.SetPingTimeout(10 * time.Second) //nolint:optionsgomnd
 
 	opts.SetConnectionAttemptHandler(func(broker *url.URL, tlsCfg *tls.Config) *tls.Config {
-		log.Printf("ConnectionAttemptHandler: broker: %s\n", broker)
+		logger.Info("ConnectionAttemptHandler", "broker", broker)
 
 		return tlsCfg
 	})
 
-	opts.SetConnectionLostHandler(func(client mqtt.Client, err error) {
-		log.Printf("ConnectionLostHandler: err: %s\n", err)
+	opts.SetConnectionLostHandler(func(_ mqtt.Client, err error) {
+		logger.Info("ConnectionLostHandler", "error", err)
 	})
 
-	opts.SetReconnectingHandler(func(client mqtt.Client, options *mqtt.ClientOptions) {
-		log.Printf("ReconnectingHandler\n")
+	opts.SetReconnectingHandler(func(_ mqtt.Client, _ *mqtt.ClientOptions) {
+		logger.Info("ReconnectingHandler")
 	})
 
-	opts.SetOnConnectHandler(func(client mqtt.Client) {
-		log.Printf("OnConnectHandler\n")
+	opts.SetOnConnectHandler(func(_ mqtt.Client) {
+		logger.Info("OnConnectHandler")
 	})
 
 	c := mqtt.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
+		logger.Error("mqtt connection failed", "error", token.Error())
 	}
 
 	return c
 }
 
 func main() {
+	logger := slog.Default()
+
 	cfg := Config{
 		ClientID: "mqtt101-producer-client",
 		URL:      "mqtt://127.0.0.1:1883",
 	}
 
-	client := Connect(cfg)
+	client := Connect(cfg, logger.With("component", "client"))
 
-	log.Println(client.IsConnected())
+	logger.Info("client connected", "is-connected", client.IsConnected())
 
 	for {
 		if !client.IsConnectionOpen() {
-			log.Println("client is not connected, wait for connection")
+			logger.Info("client is not connected, wait for connection")
 		} else {
 			token := client.Publish("test", 0, false, "test")
 
 			<-token.Done()
 
 			if token.Error() != nil {
-				log.Println(token.Error())
+				logger.Error("", "error", token.Error())
 			} else {
-				log.Println("successful publish")
+				logger.Info("successful publish")
 			}
 		}
 
