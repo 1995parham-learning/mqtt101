@@ -33,7 +33,7 @@ func main() {
 	mqttURL, _ := url.Parse("mqtt://127.0.0.1:1883")
 
 	conn, err := autopaho.NewConnection(context.Background(), autopaho.ClientConfig{
-		ServerUrls:   []*url.URL{mqttURL},
+		ServerUrls: []*url.URL{mqttURL},
 		ClientConfig: paho.ClientConfig{
 			ClientID: "mqtt101-consumer-client",
 			OnPublishReceived: []func(paho.PublishReceived) (bool, error){
@@ -74,6 +74,7 @@ func main() {
 	// We could cancel the context at this point but will call Disconnect instead (this waits for autopaho to shutdown)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	_ = conn.Disconnect(ctx)
 
 	logger.Info("shutdown complete")
