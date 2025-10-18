@@ -18,6 +18,7 @@ const (
 	PublishDelay         = 3 * time.Second
 	ConnectTimeout       = 5 * time.Second
 	ConnectRetryInterval = 3 * time.Second
+	KeepAlive            = 30
 )
 
 type Config struct {
@@ -36,11 +37,11 @@ func Connect(cfg Config, logger *slog.Logger) *autopaho.ConnectionManager {
 	}
 
 	conn, err := autopaho.NewConnection(context.Background(), autopaho.ClientConfig{
-		ServerUrls:                 []*url.URL{mqttURL},
-		KeepAlive:                  30,
-		ConnectRetryDelay:          ConnectRetryInterval,
-		OnConnectionUp:             func(cm *autopaho.ConnectionManager, _ *paho.Connack) { logger.Info("mqtt connection up") },
-		OnConnectError:             func(err error) { logger.Error("error whilst attempting connection", "error", err) },
+		ServerUrls:        []*url.URL{mqttURL},
+		KeepAlive:         KeepAlive,
+		ConnectRetryDelay: ConnectRetryInterval,
+		OnConnectionUp:    func(_ *autopaho.ConnectionManager, _ *paho.Connack) { logger.Info("mqtt connection up") },
+		OnConnectError:    func(err error) { logger.Error("error whilst attempting connection", "error", err) },
 		ClientConfig: paho.ClientConfig{
 			ClientID: cfg.ClientID,
 		},
