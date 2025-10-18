@@ -17,7 +17,7 @@ jobs:
           go-version-file: "mqtt/go.mod"
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
           working-directory: mqtt
@@ -32,7 +32,7 @@ jobs:
           go-version-file: "coap/go.mod"
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
           working-directory: coap
