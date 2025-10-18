@@ -1,0 +1,38 @@
+# Binaries
+producer/producer
+consumer/consumer
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+
+# Test files
+*_test.go
+testdata/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD
+.github/
+
+# Local config
+.env
+*.local
