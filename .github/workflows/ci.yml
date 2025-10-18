@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-mqtt:
+    name: Lint MQTT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "mqtt/go.mod"
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: mqtt
+
+  lint-coap:
+    name: Lint CoAP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "coap/go.mod"
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: coap
+
+  build-mqtt:
+    name: Build MQTT
+    runs-on: ubuntu-latest
+    needs: lint-mqtt
+    strategy:
+      matrix:
+        component: [producer, consumer]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "mqtt/go.mod"
+
+      - name: Download dependencies
+        working-directory: mqtt/${{ matrix.component }}
+        run: go mod download
+
+      - name: Build ${{ matrix.component }}
+        working-directory: mqtt/${{ matrix.component }}
+        run: go build -v -o ../../bin/mqtt-${{ matrix.component }} .
+
+  build-coap:
+    name: Build CoAP
+    runs-on: ubuntu-latest
+    needs: lint-coap
+    strategy:
+      matrix:
+        component: [server, client]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "coap/go.mod"
+
+      - name: Download dependencies
+        working-directory: coap/${{ matrix.component }}
+        run: go mod download
+
+      - name: Build ${{ matrix.component }}
+        working-directory: coap/${{ matrix.component }}
+        run: go build -v -o ../../bin/coap-${{ matrix.component }} .
