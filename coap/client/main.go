@@ -1,3 +1,9 @@
+// Package main implements a simple CoAP (Constrained Application Protocol) client
+// that connects to a CoAP server over UDP and performs GET requests.
+//
+// The client dials the server at localhost:1373 and sends a GET request to
+// a specified path (default: "/b", or provided via command-line argument).
+// It then reads and prints the response payload to the console.
 package main
 
 import (
@@ -14,7 +20,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error dialing: %v", err)
 	}
-	defer co.Close()
+
+	defer func() {
+		_ = co.Close()
+	}()
 
 	path := "/b"
 

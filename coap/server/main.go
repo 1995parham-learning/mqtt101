@@ -1,3 +1,12 @@
+// Package main implements a simple CoAP (Constrained Application Protocol) server
+// that listens for UDP requests on port 1373.
+//
+// The server uses a router-based approach to handle different resource paths.
+// Currently, it defines a handler for the "/a" path that responds with
+// "hello world" in plain text format.
+//
+// The server runs until it receives a SIGINT or SIGTERM signal, at which point
+// it performs a graceful shutdown.
 package main
 
 import (
@@ -7,12 +16,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/plgd-dev/go-coap/v3/udp"
-	coapNet "github.com/plgd-dev/go-coap/v3/net"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/mux"
+	coapNet "github.com/plgd-dev/go-coap/v3/net"
 	"github.com/plgd-dev/go-coap/v3/options"
+	"github.com/plgd-dev/go-coap/v3/udp"
 )
 
 func handleA(w mux.ResponseWriter, _ *mux.Message) {
@@ -32,7 +41,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer udpConn.Close()
+
+	defer func() {
+		_ = udpConn.Close()
+	}()
 
 	server := udp.NewServer(options.WithMux(r))
 
