@@ -18,7 +18,6 @@ const (
 	PublishDelay         = 3 * time.Second
 	ConnectTimeout       = 5 * time.Second
 	ConnectRetryInterval = 3 * time.Second
-	MaxReconnectInterval = 9 * time.Second
 )
 
 type Config struct {
@@ -29,13 +28,23 @@ type Config struct {
 // Connect into mqtt broker.
 // nolint: exhaustruct
 func Connect(cfg Config, logger *slog.Logger) *autopaho.ConnectionManager {
-	mqttURL, _ := url.Parse(cfg.URL)
+	mqttURL, err := url.Parse(cfg.URL)
+	if err != nil {
+		logger.Error("failed to parse MQTT URL", "error", err)
+
+		return nil
+	}
 
 	conn, err := autopaho.NewConnection(context.Background(), autopaho.ClientConfig{
-		ServerUrls: []*url.URL{mqttURL},
+		ServerUrls:                 []*url.URL{mqttURL},
+		KeepAlive:                  30,
+		ConnectRetryDelay:          ConnectRetryInterval,
+		OnConnectionUp:             func(cm *autopaho.ConnectionManager, _ *paho.Connack) { logger.Info("mqtt connection up") },
+		OnConnectError:             func(err error) { logger.Error("error whilst attempting connection", "error", err) },
 		ClientConfig: paho.ClientConfig{
 			ClientID: cfg.ClientID,
 		},
+		ConnectTimeout: ConnectTimeout,
 	})
 	if err != nil {
 		logger.Error("failed to create a new connection", "error", err)
@@ -66,34 +75,48 @@ func main() {
 	}
 
 	conn := Connect(cfg, logger.With("component", "client"))
+	if conn == nil {
+		logger.Error("failed to establish connection")
+		os.Exit(1)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	go func() {
-		for {
-			_, err := conn.Publish(context.Background(), &paho.Publish{
-				QoS:     0,
-				Topic:   "test",
-				Payload: []byte("hello world"),
-			})
-			if err != nil {
-				slog.Error("failed to publish", "error", err)
-			}
+		ticker := time.NewTicker(PublishDelay)
+		defer ticker.Stop()
 
-			time.Sleep(PublishDelay)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if _, err := conn.Publish(ctx, &paho.Publish{
+					QoS:     0,
+					Topic:   "test",
+					Payload: []byte("hello world"),
+				}); err != nil {
+					logger.Error("failed to publish", "error", err)
+				}
+			}
 		}
 	}()
 
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT)
-	signal.Notify(sig, syscall.SIGTERM)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
 	<-sig
 	logger.Info("signal caught - exiting")
+	cancel()
 
 	// We could cancel the context at this point but will call Disconnect instead (this waits for autopaho to shutdown)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	disconnectCtx, disconnectCancel := context.WithTimeout(context.Background(), time.Second)
+	defer disconnectCancel()
 
-	_ = conn.Disconnect(ctx)
+	if err := conn.Disconnect(disconnectCtx); err != nil {
+		logger.Error("error during disconnect", "error", err)
+	}
 
 	logger.Info("shutdown complete")
 }

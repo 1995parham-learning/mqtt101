@@ -35,7 +35,7 @@ run: (dev "up")
     set -o pipefail
 
     cleanup() {
-      echo "{{ BOLD + RED }}Shutting down producer...{{ NORMAL }}"
+      echo "{{ BOLD + RED }}Shutting down consumer...{{ NORMAL }}"
       kill $CONSUMER_PID
       wait
     }

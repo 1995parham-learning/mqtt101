@@ -14,6 +14,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error dialing: %v", err)
 	}
+	defer co.Close()
 
 	path := "/b"
 

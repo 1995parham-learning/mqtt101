@@ -18,19 +18,23 @@ const (
 	CheckDelay = time.Second
 )
 
-func onMessage(pr paho.PublishReceived) (bool, error) {
-	msg := pr.Packet
-
-	slog.Default().With("role", "consumer").Info("New message", "topic", msg.Topic, "payload", string(msg.Payload))
-
-	return true, nil
-}
-
 // nolint: exhaustruct
 func main() {
 	logger := slog.Default().With("role", "consumer")
 
-	mqttURL, _ := url.Parse("mqtt://127.0.0.1:1883")
+	onMessage := func(pr paho.PublishReceived) (bool, error) {
+		msg := pr.Packet
+		logger.Info("New message", "topic", msg.Topic, "payload", string(msg.Payload))
+
+		return true, nil
+	}
+
+	mqttURL, err := url.Parse("mqtt://127.0.0.1:1883")
+	if err != nil {
+		logger.Error("failed to parse MQTT URL", "error", err)
+
+		return
+	}
 
 	conn, err := autopaho.NewConnection(context.Background(), autopaho.ClientConfig{
 		ServerUrls: []*url.URL{mqttURL},
@@ -69,8 +73,7 @@ func main() {
 	logger.Info("connection successful ✅")
 
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT)
-	signal.Notify(sig, syscall.SIGTERM)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
 	<-sig
 	logger.Info("signal caught - exiting")
@@ -79,7 +82,9 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	_ = conn.Disconnect(ctx)
+	if err := conn.Disconnect(ctx); err != nil {
+		logger.Error("error during disconnect", "error", err)
+	}
 
 	logger.Info("shutdown complete")
 }
