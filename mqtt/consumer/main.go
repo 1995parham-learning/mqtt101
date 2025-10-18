@@ -18,7 +18,7 @@ const (
 	CheckDelay = time.Second
 )
 
-// nolint: exhaustruct
+// nolint: exhaustruct, funlen
 func main() {
 	logger := slog.Default().With("role", "consumer")
 
