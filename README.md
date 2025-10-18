@@ -1,6 +1,7 @@
 <h1 align="center">MQTT 101</h1>
 <p align="center">
   <img src=".github/assets/banner.png"><br>
+  <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/1995parham-learning/mqtt101/ci.yml?style=for-the-badge">
 </p>
 
 ## Introduction
